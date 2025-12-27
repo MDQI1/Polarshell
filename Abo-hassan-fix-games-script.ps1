@@ -9,7 +9,7 @@ Clear-Host
 
 # Minimal header
 Write-Host ""
-Write-Host "  SteaMar - Fix Games Not Showing" -ForegroundColor Cyan
+Write-Host "  Abo Hassan - Fix Games Not Showing" -ForegroundColor Cyan
 Write-Host "  ================================" -ForegroundColor DarkGray
 Write-Host ""
 
@@ -189,3 +189,4 @@ Write-Host "  You can close this window and launch Steam." -ForegroundColor Dark
 Write-Host ""
 Write-Host "  Press any key to exit..."
 $null = $Host.UI.RawUI.ReadKey()
+
