@@ -10,14 +10,22 @@
 #   3. تثبيت إضافة Luatools
 # ================================================
 
+# تفعيل دعم اللغة العربية
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+chcp 65001 > $null
+
 # التحقق من صلاحيات المدير وإعادة التشغيل إذا لزم
 if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
     Write-Host "جاري طلب صلاحيات المدير..." -ForegroundColor Yellow
-    Start-Process PowerShell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"iwr -useb 'https://raw.githubusercontent.com/MDQI1/Abo-hassan-fix/main/Abo-hassan-steam-fix.ps1' | iex`""
+    Start-Process PowerShell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"chcp 65001 > `$null; iwr -useb 'https://raw.githubusercontent.com/MDQI1/Abo-hassan-fix/main/Abo-hassan-steam-fix.ps1' | iex`""
     exit
 }
 
 Clear-Host
+
+# تفعيل دعم اللغة العربية مرة أخرى بعد Clear
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 # الإعدادات
 $pluginName = "luatools"
