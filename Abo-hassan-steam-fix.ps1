@@ -65,7 +65,7 @@ function Get-SteamPath {
 # ============================================
 # STEP 1: Detect Steam
 # ============================================
-Write-Host "  [1/7] Detecting Steam..." -ForegroundColor Yellow -NoNewline
+Write-Host "  [1/9] Detecting Steam..." -ForegroundColor Yellow -NoNewline
 $steamPath = Get-SteamPath
 
 if (-not $steamPath) {
@@ -96,7 +96,7 @@ Write-Host ""
 # ============================================
 # STEP 2: Close Steam
 # ============================================
-Write-Host "  [2/7] Closing Steam..." -ForegroundColor Yellow -NoNewline
+Write-Host "  [2/9] Closing Steam..." -ForegroundColor Yellow -NoNewline
 $steamProcesses = Get-Process -Name "steam*" -ErrorAction SilentlyContinue
 if ($steamProcesses) {
     $steamProcesses | Stop-Process -Force -ErrorAction SilentlyContinue
@@ -113,7 +113,7 @@ Write-Host ""
 # ============================================
 # STEP 3: Remove steam.cfg (allows updates & Millennium)
 # ============================================
-Write-Host "  [3/7] Removing steam.cfg..." -ForegroundColor Yellow -NoNewline
+Write-Host "  [3/9] Removing steam.cfg..." -ForegroundColor Yellow -NoNewline
 $steamCfgPath = Join-Path $steamPath "steam.cfg"
 
 if (Test-Path $steamCfgPath) {
@@ -132,30 +132,59 @@ if (Test-Path $steamCfgPath) {
 Write-Host ""
 
 # ============================================
-# STEP 4: Clean Millennium config (fix invalid JSON)
+# STEP 4: Remove old Millennium (force reinstall)
 # ============================================
-Write-Host "  [4/8] Cleaning Millennium config..." -ForegroundColor Yellow -NoNewline
-$extConfigPath = Join-Path $steamPath "ext\config.json"
+Write-Host "  [4/9] Removing old Millennium..." -ForegroundColor Yellow -NoNewline
 
-if (Test-Path $extConfigPath) {
+$millenniumRemoved = $false
+$extPath = Join-Path $steamPath "ext"
+$user32Path = Join-Path $steamPath "user32.dll"
+$version32Path = Join-Path $steamPath "version.dll"
+
+# Remove ext folder
+if (Test-Path $extPath) {
     try {
-        Remove-Item -Path $extConfigPath -Force -ErrorAction Stop
-        Write-Host " OK" -ForegroundColor Green
-        Write-Host "        Removed corrupted config" -ForegroundColor DarkGray
+        Remove-Item -Path $extPath -Recurse -Force -ErrorAction Stop
+        $millenniumRemoved = $true
     } catch {
-        Write-Host " FAILED" -ForegroundColor Red
-        Write-Host "        Please delete ext\config.json manually" -ForegroundColor DarkGray
+        Write-Host " PARTIAL" -ForegroundColor Yellow
+        Write-Host "        Could not remove ext folder" -ForegroundColor DarkGray
     }
+}
+
+# Remove user32.dll (Millennium loader)
+if (Test-Path $user32Path) {
+    try {
+        Remove-Item -Path $user32Path -Force -ErrorAction Stop
+        $millenniumRemoved = $true
+    } catch {
+        # Ignore if can't delete
+    }
+}
+
+# Remove version.dll (alternative loader)
+if (Test-Path $version32Path) {
+    try {
+        Remove-Item -Path $version32Path -Force -ErrorAction Stop
+        $millenniumRemoved = $true
+    } catch {
+        # Ignore if can't delete
+    }
+}
+
+if ($millenniumRemoved) {
+    Write-Host " OK" -ForegroundColor Green
+    Write-Host "        Old Millennium removed" -ForegroundColor DarkGray
 } else {
     Write-Host " OK" -ForegroundColor Green
-    Write-Host "        No config to clean" -ForegroundColor DarkGray
+    Write-Host "        No old installation found" -ForegroundColor DarkGray
 }
 Write-Host ""
 
 # ============================================
-# STEP 5: Install Millennium
+# STEP 5: Install Millennium (fresh install)
 # ============================================
-Write-Host "  [5/8] Installing Millennium..." -ForegroundColor Yellow
+Write-Host "  [5/9] Installing Millennium..." -ForegroundColor Yellow
 Write-Host "        Please wait, downloading from steambrew.app..." -ForegroundColor DarkGray
 Write-Host ""
 
@@ -172,7 +201,7 @@ Write-Host ""
 # ============================================
 # STEP 6: Install Steamtools
 # ============================================
-Write-Host "  [6/8] Checking Steamtools..." -ForegroundColor Yellow -NoNewline
+Write-Host "  [6/9] Checking Steamtools..." -ForegroundColor Yellow -NoNewline
 $steamtoolsPath = Join-Path $steamPath "xinput1_4.dll"
 
 if (Test-Path $steamtoolsPath) {
@@ -181,7 +210,7 @@ if (Test-Path $steamtoolsPath) {
 } else {
     Write-Host " Not Found" -ForegroundColor Yellow
     Write-Host ""
-    Write-Host "  [6/8] Installing Steamtools..." -ForegroundColor Yellow
+    Write-Host "  [6/9] Installing Steamtools..." -ForegroundColor Yellow
     Write-Host "        Please wait..." -ForegroundColor DarkGray
     
     try {
@@ -221,7 +250,7 @@ if (Test-Path $steamtoolsPath) {
 # ============================================
 # STEP 7: Install Plugin
 # ============================================
-Write-Host "  [7/8] Installing $pluginName plugin..." -ForegroundColor Yellow
+Write-Host "  [7/9] Installing $pluginName plugin..." -ForegroundColor Yellow
 
 # Ensure plugins folder exists
 $pluginsFolder = Join-Path $steamPath "plugins"
@@ -255,9 +284,9 @@ try {
     Expand-Archive -Path $tempZip -DestinationPath $pluginPath -Force *> $null
     Remove-Item $tempZip -ErrorAction SilentlyContinue
     
-    Write-Host "  [7/8] Plugin installed!" -ForegroundColor Green
+    Write-Host "  [7/9] Plugin installed!" -ForegroundColor Green
 } catch {
-    Write-Host "  [7/8] Plugin installation failed!" -ForegroundColor Red
+    Write-Host "  [7/9] Plugin installation failed!" -ForegroundColor Red
     Write-Host "        Error: $_" -ForegroundColor DarkGray
 }
 Write-Host ""
@@ -265,7 +294,7 @@ Write-Host ""
 # ============================================
 # STEP 8: Launch Steam
 # ============================================
-Write-Host "  [8/8] Launching Steam..." -ForegroundColor Yellow -NoNewline
+Write-Host "  [8/9] Launching Steam..." -ForegroundColor Yellow -NoNewline
 Write-Host " OK" -ForegroundColor Green
 Write-Host ""
 
