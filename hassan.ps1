@@ -78,7 +78,17 @@ Write-Host ""
 # Define paths
 $configPath = Join-Path $steamPath "config"
 $desktopPath = [Environment]::GetFolderPath("Desktop")
-$backupPath = Join-Path $desktopPath "Steam_Config_Backup"
+$backupBaseName = "Steam_Config_Backup"
+$backupPath = Join-Path $desktopPath $backupBaseName
+
+# Find unique backup name (Steam_Config_Backup, Steam_Config_Backup_1, Steam_Config_Backup_2, etc.)
+if (Test-Path $backupPath) {
+    $counter = 1
+    while (Test-Path (Join-Path $desktopPath "${backupBaseName}_$counter")) {
+        $counter++
+    }
+    $backupPath = Join-Path $desktopPath "${backupBaseName}_$counter"
+}
 
 # ============================================
 # STEP 2: Close Steam
@@ -99,11 +109,6 @@ Write-Host "  [3/7] Moving config folder to Desktop..." -ForegroundColor Yellow 
 
 if (Test-Path $configPath) {
     try {
-        # Remove old backup if exists
-        if (Test-Path $backupPath) {
-            Remove-Item -Path $backupPath -Recurse -Force -ErrorAction SilentlyContinue
-        }
-        
         # Move (cut) config to desktop
         Move-Item -Path $configPath -Destination $backupPath -Force -ErrorAction Stop
         Write-Host " OK" -ForegroundColor Green
