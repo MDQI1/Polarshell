@@ -57,7 +57,7 @@ Write-Host ""
 Write-Host "  [1/5] Detecting Steam..." -ForegroundColor Yellow -NoNewline
 $steamPath = $null
 
-# Try multiple registry locations
+# 1. Try Registry
 $regPaths = @(
     @{ Path = "HKCU:\Software\Valve\Steam"; Key = "SteamPath" },
     @{ Path = "HKLM:\Software\Valve\Steam"; Key = "InstallPath" },
@@ -66,23 +66,56 @@ $regPaths = @(
 
 foreach ($reg in $regPaths) {
     if (Test-Path $reg.Path) {
-        $steamPath = (Get-ItemProperty -Path $reg.Path -Name $reg.Key -ErrorAction SilentlyContinue).$($reg.Key)
-        if ($steamPath -and (Test-Path $steamPath)) { break }
-        $steamPath = $null
+        $foundPath = (Get-ItemProperty -Path $reg.Path -Name $reg.Key -ErrorAction SilentlyContinue).$($reg.Key)
+        if ($foundPath -and (Test-Path $foundPath)) { 
+            $steamPath = $foundPath
+            break 
+        }
     }
 }
 
+# 2. Try Standard Paths (Fallback)
+if (-not $steamPath) {
+    $commonPaths = @(
+        "C:\Program Files (x86)\Steam",
+        "C:\Program Files\Steam"
+    )
+    foreach ($path in $commonPaths) {
+        if (Test-Path $path) {
+            $steamPath = $path
+            break
+        }
+    }
+}
+
+# 3. Manual Input
 if (-not $steamPath) {
     Write-Host " FAILED" -ForegroundColor Red
     Write-Host ""
-    Write-Host "  Steam not found!" -ForegroundColor Red
-    Write-Host "  Press any key to exit..."
-    $null = $Host.UI.RawUI.ReadKey()
-    exit 1
+    Write-Host "  Could not find Steam automatically." -ForegroundColor Yellow
+    Write-Host "  Please paste the path to your Steam folder:" -ForegroundColor White
+    Write-Host "  (Example: C:\Program Files (x86)\Steam)" -ForegroundColor DarkGray
+    $steamPath = Read-Host "  Path"
+    
+    if (-not (Test-Path $steamPath)) {
+        Write-Host ""
+        Write-Host "  Invalid path! Exiting..." -ForegroundColor Red
+        Start-Sleep -Seconds 3
+        exit 1
+    }
 }
 
 Write-Host " OK" -ForegroundColor Green
-Write-Host "        Path: $steamPath" -ForegroundColor DarkGray
+Write-Host "        Target: $steamPath" -ForegroundColor Cyan
+Write-Host ""
+
+# Confirm before proceeding
+Write-Host "  Are you sure you want to clean this folder? (Y/N)" -ForegroundColor Yellow
+$confirm = Read-Host "  Choice"
+if ($confirm -notmatch "^[Yy]") {
+    Write-Host "  Cancelled." -ForegroundColor Red
+    exit
+}
 Write-Host ""
 
 # ============================================
