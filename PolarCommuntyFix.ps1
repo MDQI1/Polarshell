@@ -1,6 +1,6 @@
 #Requires -Version 5.1
 # ================================================
-# Abo Hassan - All-in-One Installer (PolarCommunity)
+# Polar Commuity  - All-in-One Installer (PolarCommunity)
 # Created by: PolarCommunity
 # Year: 2025
 # ================================================
@@ -17,7 +17,7 @@ chcp 65001 | Out-Null
 $OutputEncoding = [Console]::OutputEncoding = [Text.Encoding]::UTF8
 
 # Download script to temp for admin restart
-$tempScriptPath = Join-Path $env:TEMP "abo-hassan-installer-polar.ps1"
+$tempScriptPath = Join-Path $env:TEMP "polar-Community.ps1"
 if ($PSCommandPath) {
     Copy-Item -Path $PSCommandPath -Destination $tempScriptPath -Force -ErrorAction SilentlyContinue
 }
@@ -33,9 +33,9 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 Clear-Host
 
 # Configuration
-$pluginName = "polartools"
+$pluginName = "PolarTools"
 $pluginLink = "https://github.com/MDQI1/PolarTools/releases/download/1.5.6/PolarTools_v1.5.6.zip"
-$oldPluginNames = @("luatools", "manilua", "stelenium", "polartools")  # Old plugin names to remove
+$oldPluginNames = @("luatools", "manilua", "stelenium", "PolarTools")  # Old plugin names to remove
 
 # Hide progress bar for faster downloads
 $ProgressPreference = 'SilentlyContinue'
@@ -45,7 +45,7 @@ $ProgressPreference = 'SilentlyContinue'
 # ============================================
 Write-Host ""
 Write-Host "  =========================================" -ForegroundColor Cyan
-Write-Host "   PolarCommunity - All-in-One (PolarTools)" -ForegroundColor Cyan
+Write-Host "   Polar Commuity  - All-in-One (PolarCommunity)" -ForegroundColor Cyan
 Write-Host "               Version 2.0                 " -ForegroundColor Cyan
 Write-Host "  =========================================" -ForegroundColor Cyan
 Write-Host ""
@@ -193,7 +193,7 @@ foreach ($file in $millenniumFiles) {
     }
 }
 
-# Remove old plugins (luatools, manilua, stelenium, polartools)
+# Remove old plugins (luatools, manilua, stelenium, PolarTools)
 $pluginsPath = Join-Path $steamPath "plugins"
 if (Test-Path $pluginsPath -PathType Container) {
     Get-ChildItem -Path $pluginsPath -Directory -ErrorAction SilentlyContinue | ForEach-Object {
@@ -285,14 +285,14 @@ try {
     # Extract to temp folder first
     Expand-Archive -Path $tempZip -DestinationPath $tempExtract -Force
     
-    # Check if there's a subfolder inside (like PolarTools inside the zip)
-    $extractedItems = Get-ChildItem -Path $tempExtract
+    # Check if there's a nested folder inside (like PolarTools inside the zip)
+    $extractedItems = Get-ChildItem -Path $tempExtract -Force
     if ($extractedItems.Count -eq 1 -and $extractedItems[0].PSIsContainer) {
-        # There's only one folder inside, move its contents
+        # Single folder inside - move its contents to the plugin path
         $innerFolder = $extractedItems[0].FullName
         Move-Item -Path $innerFolder -Destination $pluginPath -Force
     } else {
-        # Multiple items or files, move the whole temp folder
+        # Multiple items or files - move the whole temp folder
         Move-Item -Path $tempExtract -Destination $pluginPath -Force
     }
     
