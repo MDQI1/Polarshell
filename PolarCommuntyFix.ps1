@@ -1,16 +1,15 @@
 #Requires -Version 5.1
 # ================================================
-# Abo Hassan - All-in-One Installer v2
-# Created by: Abo Hassan (أبو حسن)
+# Polar Commuity  - All-in-One Installer (PolarCommunity)
+# Created by: PolarCommunity
 # Year: 2025
 # ================================================
 # This script will:
 #   1. Add Steam to Windows Defender exclusions
 #   2. Clean old installations
 #   3. Install Millennium
-#   4. Install Steamtools
-#   5. Install Luatools Plugin
-#   6. Clean Steam cache
+#   4. Install PolarTools Plugin
+#   5. Clean Steam cache
 # ================================================
 
 # Set UTF-8 encoding
@@ -18,7 +17,7 @@ chcp 65001 | Out-Null
 $OutputEncoding = [Console]::OutputEncoding = [Text.Encoding]::UTF8
 
 # Download script to temp for admin restart
-$tempScriptPath = Join-Path $env:TEMP "abo-hassan-installer.ps1"
+$tempScriptPath = Join-Path $env:TEMP "polar-Community.ps1"
 if ($PSCommandPath) {
     Copy-Item -Path $PSCommandPath -Destination $tempScriptPath -Force -ErrorAction SilentlyContinue
 }
@@ -34,9 +33,9 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 Clear-Host
 
 # Configuration
-$pluginName = "luatools"
-$pluginLink = "https://github.com/madoiscool/ltsteamplugin/releases/latest/download/ltsteamplugin.zip"
-$oldPluginNames = @("luatools", "manilua", "stelenium")  # Old plugin names to remove
+$pluginName = "polartools"
+$pluginLink = "https://github.com/MDQI1/PolarTools/releases/download/1.5.6/PolarTools_v1.5.6.zip"
+$oldPluginNames = @("luatools", "manilua", "stelenium", "polartools")  # Old plugin names to remove
 
 # Hide progress bar for faster downloads
 $ProgressPreference = 'SilentlyContinue'
@@ -46,20 +45,19 @@ $ProgressPreference = 'SilentlyContinue'
 # ============================================
 Write-Host ""
 Write-Host "  =========================================" -ForegroundColor Cyan
-Write-Host "     Abo Hassan - All-in-One Installer     " -ForegroundColor Cyan
+Write-Host "   Polar Commuity  - All-in-One (PolarCommunity)" -ForegroundColor Cyan
 Write-Host "               Version 2.0                 " -ForegroundColor Cyan
 Write-Host "  =========================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  This will install:" -ForegroundColor DarkGray
 Write-Host "    - Millennium (Steam modding framework)" -ForegroundColor DarkGray
-Write-Host "    - Steamtools (unlock all games)" -ForegroundColor DarkGray
-Write-Host "    - Luatools Plugin" -ForegroundColor DarkGray
+Write-Host "    - PolarTools Plugin" -ForegroundColor DarkGray
 Write-Host ""
 
 # ============================================
 # STEP 1: Detect Steam Path
 # ============================================
-Write-Host "  [1/10] Detecting Steam..." -ForegroundColor Yellow -NoNewline
+Write-Host "  [1/9] Detecting Steam..." -ForegroundColor Yellow -NoNewline
 $steamPath = $null
 
 # Try multiple registry locations
@@ -103,7 +101,7 @@ Write-Host ""
 # ============================================
 # STEP 2: Add Steam to Windows Defender Exclusions
 # ============================================
-Write-Host "  [2/10] Windows Defender exclusions..." -ForegroundColor Yellow -NoNewline
+Write-Host "  [2/9] Windows Defender exclusions..." -ForegroundColor Yellow -NoNewline
 try {
     $defenderPreferences = Get-MpPreference -ErrorAction SilentlyContinue
     $exclusions = $defenderPreferences.ExclusionPath
@@ -125,7 +123,7 @@ Write-Host ""
 # ============================================
 # STEP 3: Close Steam
 # ============================================
-Write-Host "  [3/10] Closing Steam..." -ForegroundColor Yellow -NoNewline
+Write-Host "  [3/9] Closing Steam..." -ForegroundColor Yellow -NoNewline
 $steamProcesses = Get-Process -Name "steam*" -ErrorAction SilentlyContinue
 if ($steamProcesses) {
     $steamProcesses | Stop-Process -Force -ErrorAction SilentlyContinue
@@ -139,7 +137,7 @@ Write-Host ""
 # ============================================
 # STEP 4: Remove steam.cfg (update blocker)
 # ============================================
-Write-Host "  [4/10] Removing steam.cfg..." -ForegroundColor Yellow -NoNewline
+Write-Host "  [4/9] Removing steam.cfg..." -ForegroundColor Yellow -NoNewline
 $steamCfgPath = Join-Path $steamPath "steam.cfg"
 
 if (Test-Path $steamCfgPath) {
@@ -155,13 +153,19 @@ Write-Host ""
 # ============================================
 # STEP 5: Clean old installations
 # ============================================
-Write-Host "  [5/10] Cleaning old installations..." -ForegroundColor Yellow
+Write-Host "  [5/9] Cleaning old installations..." -ForegroundColor Yellow
 
-# Remove old Steamtools (hid.dll - old version)
-$hidDllPath = Join-Path $steamPath "hid.dll"
-if (Test-Path $hidDllPath) {
-    Remove-Item $hidDllPath -Force -ErrorAction SilentlyContinue
-    Write-Host "        Removed old hid.dll" -ForegroundColor DarkGray
+# Remove old Steamtools files
+$steamtoolsFiles = @(
+    (Join-Path $steamPath "hid.dll"),
+    (Join-Path $steamPath "xinput1_4.dll")
+)
+
+foreach ($file in $steamtoolsFiles) {
+    if (Test-Path $file) {
+        Remove-Item $file -Force -ErrorAction SilentlyContinue
+        Write-Host "        Removed: $(Split-Path $file -Leaf)" -ForegroundColor DarkGray
+    }
 }
 
 # Remove old config.json
@@ -189,7 +193,7 @@ foreach ($file in $millenniumFiles) {
     }
 }
 
-# Remove old plugins (luatools, manilua, stelenium)
+# Remove old plugins (luatools, manilua, stelenium, polartools)
 $pluginsPath = Join-Path $steamPath "plugins"
 if (Test-Path $pluginsPath -PathType Container) {
     Get-ChildItem -Path $pluginsPath -Directory -ErrorAction SilentlyContinue | ForEach-Object {
@@ -212,7 +216,7 @@ Write-Host ""
 # ============================================
 # STEP 6: Install Millennium
 # ============================================
-Write-Host "  [6/10] Installing Millennium..." -ForegroundColor Yellow
+Write-Host "  [6/9] Installing Millennium..." -ForegroundColor Yellow
 Write-Host "        Downloading from GitHub..." -ForegroundColor DarkGray
 
 try {
@@ -248,53 +252,9 @@ try {
 Write-Host ""
 
 # ============================================
-# STEP 7: Install Steamtools
+# STEP 7: Install PolarTools Plugin
 # ============================================
-Write-Host "  [7/10] Installing Steamtools..." -ForegroundColor Yellow -NoNewline
-$steamtoolsPath = Join-Path $steamPath "xinput1_4.dll"
-
-if (Test-Path $steamtoolsPath) {
-    Write-Host " Already installed" -ForegroundColor Green
-} else {
-    Write-Host ""
-    Write-Host "        Downloading Steamtools..." -ForegroundColor DarkGray
-    
-    try {
-        $script = Invoke-RestMethod "https://steam.run" -TimeoutSec 60
-        $keptLines = @()
-
-        foreach ($line in $script -split "`n") {
-            $conditions = @(
-                ($line -imatch "Start-Process" -and $line -imatch "steam"),
-                ($line -imatch "steam\.exe"),
-                ($line -imatch "Start-Sleep" -or $line -imatch "Write-Host"),
-                ($line -imatch "cls" -or $line -imatch "exit"),
-                ($line -imatch "Stop-Process" -and -not ($line -imatch "Get-Process"))
-            )
-            
-            if (-not($conditions -contains $true)) {
-                $keptLines += $line
-            }
-        }
-
-        $SteamtoolsScript = $keptLines -join "`n"
-        Invoke-Expression $SteamtoolsScript *> $null
-
-        if (Test-Path $steamtoolsPath) {
-            Write-Host "        Steamtools installed!" -ForegroundColor Green
-        } else {
-            Write-Host "        Steamtools installation failed!" -ForegroundColor Red
-        }
-    } catch {
-        Write-Host "        Steamtools installation failed: $_" -ForegroundColor Red
-    }
-}
-Write-Host ""
-
-# ============================================
-# STEP 8: Install Luatools Plugin
-# ============================================
-Write-Host "  [8/10] Installing $pluginName plugin..." -ForegroundColor Yellow
+Write-Host "  [7/9] Installing $pluginName plugin..." -ForegroundColor Yellow
 
 # Ensure plugins folder exists
 $pluginsFolder = Join-Path $steamPath "plugins"
@@ -326,9 +286,9 @@ try {
 Write-Host ""
 
 # ============================================
-# STEP 9: Clean Steam Cache
+# STEP 8: Clean Steam Cache
 # ============================================
-Write-Host "  [9/10] Cleaning Steam cache..." -ForegroundColor Yellow
+Write-Host "  [8/9] Cleaning Steam cache..." -ForegroundColor Yellow
 
 $backupPath = Join-Path $steamPath "cache-backup-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
 New-Item -ItemType Directory -Path $backupPath -Force | Out-Null
@@ -370,9 +330,9 @@ Write-Host "        Cache cleaned! (Backup: $backupPath)" -ForegroundColor Green
 Write-Host ""
 
 # ============================================
-# STEP 10: Launch Steam & Enable Plugin
+# STEP 9: Launch Steam & Enable Plugin
 # ============================================
-Write-Host "  [10/10] Starting Steam..." -ForegroundColor Yellow
+Write-Host "  [9/9] Starting Steam..." -ForegroundColor Yellow
 Write-Host "        Launching with -dev -clearbeta flags..." -ForegroundColor DarkGray
 
 Start-Process -FilePath $steamExePath -ArgumentList "-clearbeta -dev"
