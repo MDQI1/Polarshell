@@ -45,7 +45,7 @@ $ProgressPreference = 'SilentlyContinue'
 # ============================================
 Write-Host ""
 Write-Host "  =========================================" -ForegroundColor Cyan
-Write-Host "   Abo Hassan - All-in-One (PolarCommunity)" -ForegroundColor Cyan
+Write-Host "   PolarCommunity - All-in-One (PolarTools)" -ForegroundColor Cyan
 Write-Host "               Version 2.0                 " -ForegroundColor Cyan
 Write-Host "  =========================================" -ForegroundColor Cyan
 Write-Host ""
