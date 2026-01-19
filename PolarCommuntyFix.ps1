@@ -1,6 +1,6 @@
 #Requires -Version 5.1
 # ================================================
-# Polar Commuity  - All-in-One Installer (PolarCommunity)
+# Abo Hassan - All-in-One Installer (PolarCommunity)
 # Created by: PolarCommunity
 # Year: 2025
 # ================================================
@@ -17,7 +17,7 @@ chcp 65001 | Out-Null
 $OutputEncoding = [Console]::OutputEncoding = [Text.Encoding]::UTF8
 
 # Download script to temp for admin restart
-$tempScriptPath = Join-Path $env:TEMP "polar-Community.ps1"
+$tempScriptPath = Join-Path $env:TEMP "abo-hassan-installer-polar.ps1"
 if ($PSCommandPath) {
     Copy-Item -Path $PSCommandPath -Destination $tempScriptPath -Force -ErrorAction SilentlyContinue
 }
@@ -45,7 +45,7 @@ $ProgressPreference = 'SilentlyContinue'
 # ============================================
 Write-Host ""
 Write-Host "  =========================================" -ForegroundColor Cyan
-Write-Host "   Polar Commuity  - All-in-One (PolarCommunity)" -ForegroundColor Cyan
+Write-Host "   Abo Hassan - All-in-One (PolarCommunity)" -ForegroundColor Cyan
 Write-Host "               Version 2.0                 " -ForegroundColor Cyan
 Write-Host "  =========================================" -ForegroundColor Cyan
 Write-Host ""
@@ -264,6 +264,7 @@ if (-not (Test-Path $pluginsFolder)) {
 
 $pluginPath = Join-Path $pluginsFolder $pluginName
 $tempZip = Join-Path $env:TEMP "$pluginName.zip"
+$tempExtract = Join-Path $env:TEMP "$pluginName-extract"
 
 try {
     Write-Host "        Downloading $pluginName..." -ForegroundColor DarkGray
@@ -276,8 +277,28 @@ try {
         Remove-Item $pluginPath -Recurse -Force -ErrorAction SilentlyContinue
     }
     
-    Expand-Archive -Path $tempZip -DestinationPath $pluginPath -Force
+    # Remove temp extract folder if exists
+    if (Test-Path $tempExtract) {
+        Remove-Item $tempExtract -Recurse -Force -ErrorAction SilentlyContinue
+    }
+    
+    # Extract to temp folder first
+    Expand-Archive -Path $tempZip -DestinationPath $tempExtract -Force
+    
+    # Check if there's a subfolder inside (like PolarTools inside the zip)
+    $extractedItems = Get-ChildItem -Path $tempExtract
+    if ($extractedItems.Count -eq 1 -and $extractedItems[0].PSIsContainer) {
+        # There's only one folder inside, move its contents
+        $innerFolder = $extractedItems[0].FullName
+        Move-Item -Path $innerFolder -Destination $pluginPath -Force
+    } else {
+        # Multiple items or files, move the whole temp folder
+        Move-Item -Path $tempExtract -Destination $pluginPath -Force
+    }
+    
+    # Cleanup
     Remove-Item $tempZip -ErrorAction SilentlyContinue
+    Remove-Item $tempExtract -Recurse -Force -ErrorAction SilentlyContinue
     
     Write-Host "        Plugin installed!" -ForegroundColor Green
 } catch {
