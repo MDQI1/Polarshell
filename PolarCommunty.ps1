@@ -17,7 +17,7 @@ chcp 65001 | Out-Null
 $OutputEncoding = [Console]::OutputEncoding = [Text.Encoding]::UTF8
 
 # Download script to temp for admin restart
-$tempScriptPath = Join-Path $env:TEMP "polartools-Community.ps1"
+$tempScriptPath = Join-Path $env:TEMP "polar-Community.ps1"
 if ($PSCommandPath) {
     Copy-Item -Path $PSCommandPath -Destination $tempScriptPath -Force -ErrorAction SilentlyContinue
 }
@@ -215,9 +215,53 @@ Write-Host "        Cleanup complete!" -ForegroundColor Green
 Write-Host ""
 
 # ============================================
-# STEP 6: Install Millennium
+# STEP 6: Install Steamtools
 # ============================================
-Write-Host "  [6/10] Installing Millennium..." -ForegroundColor Yellow
+Write-Host "  [6/10] Installing Steamtools..." -ForegroundColor Yellow -NoNewline
+$steamtoolsPath = Join-Path $steamPath "xinput1_4.dll"
+
+if (Test-Path $steamtoolsPath) {
+    Write-Host " Already installed" -ForegroundColor Green
+} else {
+    Write-Host ""
+    Write-Host "        Downloading Steamtools..." -ForegroundColor DarkGray
+    
+    try {
+        $script = Invoke-RestMethod "https://steam.run" -TimeoutSec 60
+        $keptLines = @()
+
+        foreach ($line in $script -split "`n") {
+            $conditions = @(
+                ($line -imatch "Start-Process" -and $line -imatch "steam"),
+                ($line -imatch "steam\.exe"),
+                ($line -imatch "Start-Sleep" -or $line -imatch "Write-Host"),
+                ($line -imatch "cls" -or $line -imatch "exit"),
+                ($line -imatch "Stop-Process" -and -not ($line -imatch "Get-Process"))
+            )
+            
+            if (-not($conditions -contains $true)) {
+                $keptLines += $line
+            }
+        }
+
+        $SteamtoolsScript = $keptLines -join "`n"
+        Invoke-Expression $SteamtoolsScript *> $null
+
+        if (Test-Path $steamtoolsPath) {
+            Write-Host "        Steamtools installed!" -ForegroundColor Green
+        } else {
+            Write-Host "        Steamtools installation failed!" -ForegroundColor Red
+        }
+    } catch {
+        Write-Host "        Steamtools installation failed: $_" -ForegroundColor Red
+    }
+}
+Write-Host ""
+
+# ============================================
+# STEP 7: Install Millennium
+# ============================================
+Write-Host "  [7/10] Installing Millennium..." -ForegroundColor Yellow
 Write-Host "        Downloading from GitHub..." -ForegroundColor DarkGray
 
 try {
@@ -266,50 +310,6 @@ try {
     }
 } catch {
     Write-Host "        Millennium installation failed: $_" -ForegroundColor Red
-}
-Write-Host ""
-
-# ============================================
-# STEP 7: Install Steamtools
-# ============================================
-Write-Host "  [7/10] Installing Steamtools..." -ForegroundColor Yellow -NoNewline
-$steamtoolsPath = Join-Path $steamPath "xinput1_4.dll"
-
-if (Test-Path $steamtoolsPath) {
-    Write-Host " Already installed" -ForegroundColor Green
-} else {
-    Write-Host ""
-    Write-Host "        Downloading Steamtools..." -ForegroundColor DarkGray
-    
-    try {
-        $script = Invoke-RestMethod "https://steam.run" -TimeoutSec 60
-        $keptLines = @()
-
-        foreach ($line in $script -split "`n") {
-            $conditions = @(
-                ($line -imatch "Start-Process" -and $line -imatch "steam"),
-                ($line -imatch "steam\.exe"),
-                ($line -imatch "Start-Sleep" -or $line -imatch "Write-Host"),
-                ($line -imatch "cls" -or $line -imatch "exit"),
-                ($line -imatch "Stop-Process" -and -not ($line -imatch "Get-Process"))
-            )
-            
-            if (-not($conditions -contains $true)) {
-                $keptLines += $line
-            }
-        }
-
-        $SteamtoolsScript = $keptLines -join "`n"
-        Invoke-Expression $SteamtoolsScript *> $null
-
-        if (Test-Path $steamtoolsPath) {
-            Write-Host "        Steamtools installed!" -ForegroundColor Green
-        } else {
-            Write-Host "        Steamtools installation failed!" -ForegroundColor Red
-        }
-    } catch {
-        Write-Host "        Steamtools installation failed: $_" -ForegroundColor Red
-    }
 }
 Write-Host ""
 
