@@ -35,7 +35,6 @@ Clear-Host
 # Configuration
 $pluginName = "PolarTools"
 $pluginLink = "https://github.com/MDQI1/PolarTools/releases/download/1.5.6/PolarTools_v1.5.6.zip"
-$steamToolsLink = "https://www.steamtools.net/res/st-setup-1.8.30.exe"
 $oldPluginNames = @("luatools", "manilua", "stelenium", "PolarTools")  # Old plugin names to remove
 
 # Hide progress bar for faster downloads
@@ -51,7 +50,6 @@ Write-Host "               Version 2.0                 " -ForegroundColor Cyan
 Write-Host "  =========================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  This will install:" -ForegroundColor DarkGray
-Write-Host "    - SteamTools" -ForegroundColor DarkGray
 Write-Host "    - Millennium (Steam modding framework)" -ForegroundColor DarkGray
 Write-Host "    - PolarTools Plugin" -ForegroundColor DarkGray
 Write-Host ""
@@ -59,7 +57,7 @@ Write-Host ""
 # ============================================
 # STEP 1: Detect Steam Path
 # ============================================
-Write-Host "  [1/10] Detecting Steam..." -ForegroundColor Yellow -NoNewline
+Write-Host "  [1/9] Detecting Steam..." -ForegroundColor Yellow -NoNewline
 $steamPath = $null
 
 # Try multiple registry locations
@@ -103,7 +101,7 @@ Write-Host ""
 # ============================================
 # STEP 2: Add Steam to Windows Defender Exclusions
 # ============================================
-Write-Host "  [2/10] Windows Defender exclusions..." -ForegroundColor Yellow -NoNewline
+Write-Host "  [2/9] Windows Defender exclusions..." -ForegroundColor Yellow -NoNewline
 try {
     $defenderPreferences = Get-MpPreference -ErrorAction SilentlyContinue
     $exclusions = $defenderPreferences.ExclusionPath
@@ -125,7 +123,7 @@ Write-Host ""
 # ============================================
 # STEP 3: Close Steam
 # ============================================
-Write-Host "  [3/10] Closing Steam..." -ForegroundColor Yellow -NoNewline
+Write-Host "  [3/9] Closing Steam..." -ForegroundColor Yellow -NoNewline
 $steamProcesses = Get-Process -Name "steam*" -ErrorAction SilentlyContinue
 if ($steamProcesses) {
     $steamProcesses | Stop-Process -Force -ErrorAction SilentlyContinue
@@ -139,7 +137,7 @@ Write-Host ""
 # ============================================
 # STEP 4: Remove steam.cfg (update blocker)
 # ============================================
-Write-Host "  [4/10] Removing steam.cfg..." -ForegroundColor Yellow -NoNewline
+Write-Host "  [4/9] Removing steam.cfg..." -ForegroundColor Yellow -NoNewline
 $steamCfgPath = Join-Path $steamPath "steam.cfg"
 
 if (Test-Path $steamCfgPath) {
@@ -155,7 +153,7 @@ Write-Host ""
 # ============================================
 # STEP 5: Clean old installations
 # ============================================
-Write-Host "  [5/10] Cleaning old installations..." -ForegroundColor Yellow
+Write-Host "  [5/9] Cleaning old installations..." -ForegroundColor Yellow
 
 # Remove old Steamtools files
 $steamtoolsFiles = @(
@@ -216,100 +214,9 @@ Write-Host "        Cleanup complete!" -ForegroundColor Green
 Write-Host ""
 
 # ============================================
-# STEP 6: Install SteamTools
+# STEP 6: Install Millennium
 # ============================================
-Write-Host "  [6/10] Installing SteamTools..." -ForegroundColor Yellow
-Write-Host "        Downloading from steamtools.net..." -ForegroundColor DarkGray
-
-try {
-    $steamToolsPath = Join-Path $env:TEMP "st-setup.exe"
-    
-    # Use headers to bypass Cloudflare
-    $headers = @{
-        "User-Agent" = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        "Accept" = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
-        "Accept-Language" = "en-US,en;q=0.5"
-    }
-    
-    Invoke-WebRequest -Uri $steamToolsLink -OutFile $steamToolsPath -UseBasicParsing -TimeoutSec 120 -Headers $headers
-    
-    if (Test-Path $steamToolsPath) {
-        # Check if file is valid (not HTML error page)
-        $fileSize = (Get-Item $steamToolsPath).Length
-        if ($fileSize -gt 100000) {
-            Write-Host ""
-            Write-Host "        =============================================" -ForegroundColor Magenta
-            Write-Host "          SteamTools installer will open now!     " -ForegroundColor Magenta
-            Write-Host "          1. Follow the installation steps        " -ForegroundColor Magenta
-            Write-Host "          2. Wait for installation to complete    " -ForegroundColor Magenta
-            Write-Host "          3. Close the installer window           " -ForegroundColor Magenta
-            Write-Host "        =============================================" -ForegroundColor Magenta
-            Write-Host ""
-            
-            $process = Start-Process -FilePath $steamToolsPath -PassThru
-            
-            Write-Host "        Waiting for installer to close..." -ForegroundColor Yellow
-            
-            $process.WaitForExit()
-            Start-Sleep -Seconds 2
-            
-            Remove-Item $steamToolsPath -ErrorAction SilentlyContinue
-            
-            Write-Host "        SteamTools installed!" -ForegroundColor Green
-        } else {
-            # File too small, probably Cloudflare block - fallback to browser
-            Remove-Item $steamToolsPath -ErrorAction SilentlyContinue
-            throw "Cloudflare protection detected"
-        }
-    }
-} catch {
-    Write-Host "        Direct download blocked. Opening browser..." -ForegroundColor Yellow
-    
-    $steamToolsDownload = Join-Path $env:USERPROFILE "Downloads\st-setup-1.8.30.exe"
-    
-    if (-not (Test-Path $steamToolsDownload)) {
-        Write-Host ""
-        Write-Host "        =============================================" -ForegroundColor Magenta
-        Write-Host "          Browser will open to download SteamTools " -ForegroundColor Magenta
-        Write-Host "          1. Wait for download to complete         " -ForegroundColor Magenta
-        Write-Host "          2. Press any key here when done          " -ForegroundColor Magenta
-        Write-Host "        =============================================" -ForegroundColor Magenta
-        Write-Host ""
-        
-        Start-Process $steamToolsLink
-        
-        Write-Host "        >>> Press any key AFTER download completes <<<" -ForegroundColor Cyan
-        $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
-    }
-    
-    if (Test-Path $steamToolsDownload) {
-        Write-Host ""
-        Write-Host "        =============================================" -ForegroundColor Magenta
-        Write-Host "          SteamTools installer will open now!     " -ForegroundColor Magenta
-        Write-Host "          1. Follow the installation steps        " -ForegroundColor Magenta
-        Write-Host "          2. Wait for installation to complete    " -ForegroundColor Magenta
-        Write-Host "          3. Close the installer window           " -ForegroundColor Magenta
-        Write-Host "        =============================================" -ForegroundColor Magenta
-        Write-Host ""
-        
-        $process = Start-Process -FilePath $steamToolsDownload -PassThru
-        
-        Write-Host "        Waiting for installer to close..." -ForegroundColor Yellow
-        
-        $process.WaitForExit()
-        Start-Sleep -Seconds 2
-        
-        Write-Host "        SteamTools installed!" -ForegroundColor Green
-    } else {
-        Write-Host "        SteamTools not found. Please install manually later." -ForegroundColor Yellow
-    }
-}
-Write-Host ""
-
-# ============================================
-# STEP 7: Install Millennium
-# ============================================
-Write-Host "  [7/10] Installing Millennium..." -ForegroundColor Yellow
+Write-Host "  [6/9] Installing Millennium..." -ForegroundColor Yellow
 Write-Host "        Downloading from GitHub..." -ForegroundColor DarkGray
 
 try {
@@ -362,9 +269,9 @@ try {
 Write-Host ""
 
 # ============================================
-# STEP 8: Install PolarTools Plugin
+# STEP 7: Install PolarTools Plugin
 # ============================================
-Write-Host "  [8/10] Installing $pluginName plugin..." -ForegroundColor Yellow
+Write-Host "  [7/9] Installing $pluginName plugin..." -ForegroundColor Yellow
 
 # Ensure plugins folder exists
 $pluginsFolder = Join-Path $steamPath "plugins"
@@ -417,9 +324,9 @@ try {
 Write-Host ""
 
 # ============================================
-# STEP 9: Clean Steam Cache
+# STEP 8: Clean Steam Cache
 # ============================================
-Write-Host "  [9/10] Cleaning Steam cache..." -ForegroundColor Yellow
+Write-Host "  [8/9] Cleaning Steam cache..." -ForegroundColor Yellow
 
 $backupPath = Join-Path $steamPath "cache-backup-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
 New-Item -ItemType Directory -Path $backupPath -Force | Out-Null
@@ -461,9 +368,9 @@ Write-Host "        Cache cleaned! (Backup: $backupPath)" -ForegroundColor Green
 Write-Host ""
 
 # ============================================
-# STEP 10: Launch Steam & Enable Plugin
+# STEP 9: Launch Steam & Enable Plugin
 # ============================================
-Write-Host "  [10/10] Starting Steam & Enabling Plugin..." -ForegroundColor Yellow
+Write-Host "  [9/9] Starting Steam & Enabling Plugin..." -ForegroundColor Yellow
 
 # Enable plugin by modifying Millennium config file BEFORE launching Steam
 $millenniumConfigPath = Join-Path $steamPath "ext\config.json"
