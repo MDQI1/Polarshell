@@ -1,15 +1,18 @@
 #Requires -Version 5.1
 # ================================================
-# Polar Commuity  - All-in-One Installer (PolarCommunity)
+# Polar Community - All-in-One Installer v3
 # Created by: PolarCommunity
 # Year: 2025
 # ================================================
 # This script will:
-#   1. Add Steam to Windows Defender exclusions
-#   2. Clean old installations
-#   3. Install Millennium
-#   4. Install PolarTools Plugin
-#   5. Clean Steam cache
+#   1. Detect Steam Path
+#   2. Add Steam to Windows Defender exclusions
+#   3. Remove steam.cfg (update blocker)
+#   4. Clean old installations
+#   5. Install Steamtools
+#   6. Install PolarTools Plugin
+#   7. Clean Steam cache
+#   8. Launch Steam & Enable Plugin
 # ================================================
 
 # Set UTF-8 encoding
@@ -17,7 +20,7 @@ chcp 65001 | Out-Null
 $OutputEncoding = [Console]::OutputEncoding = [Text.Encoding]::UTF8
 
 # Download script to temp for admin restart
-$tempScriptPath = Join-Path $env:TEMP "polartools-Community.ps1"
+$tempScriptPath = Join-Path $env:TEMP "polar-Community.ps1"
 if ($PSCommandPath) {
     Copy-Item -Path $PSCommandPath -Destination $tempScriptPath -Force -ErrorAction SilentlyContinue
 }
@@ -35,7 +38,7 @@ Clear-Host
 # Configuration
 $pluginName = "PolarTools"
 $pluginLink = "https://github.com/MDQI1/PolarTools/releases/download/1.5.6/PolarTools_v1.5.6.zip"
-$oldPluginNames = @("luatools", "manilua", "stelenium", "PolarTools")  # Old plugin names to remove
+$oldPluginNames = @("luatools", "manilua", "stelenium", "PolarTools")
 
 # Hide progress bar for faster downloads
 $ProgressPreference = 'SilentlyContinue'
@@ -45,12 +48,11 @@ $ProgressPreference = 'SilentlyContinue'
 # ============================================
 Write-Host ""
 Write-Host "  =========================================" -ForegroundColor Cyan
-Write-Host "   Polar Commuity  - All-in-One (PolarCommunity)" -ForegroundColor Cyan
-Write-Host "               Version 2.0                 " -ForegroundColor Cyan
+Write-Host "   Polar Community - All-in-One Installer  " -ForegroundColor Cyan
+Write-Host "               Version 3.0                 " -ForegroundColor Cyan
 Write-Host "  =========================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  This will install:" -ForegroundColor DarkGray
-Write-Host "    - Millennium (Steam modding framework)" -ForegroundColor DarkGray
 Write-Host "    - Steamtools (unlock all games)" -ForegroundColor DarkGray
 Write-Host "    - PolarTools Plugin" -ForegroundColor DarkGray
 Write-Host ""
@@ -58,7 +60,7 @@ Write-Host ""
 # ============================================
 # STEP 1: Detect Steam Path
 # ============================================
-Write-Host "  [1/10] Detecting Steam..." -ForegroundColor Yellow -NoNewline
+Write-Host "  [1/9] Detecting Steam..." -ForegroundColor Yellow -NoNewline
 $steamPath = $null
 
 # Try multiple registry locations
@@ -102,7 +104,7 @@ Write-Host ""
 # ============================================
 # STEP 2: Add Steam to Windows Defender Exclusions
 # ============================================
-Write-Host "  [2/10] Windows Defender exclusions..." -ForegroundColor Yellow -NoNewline
+Write-Host "  [2/9] Windows Defender exclusions..." -ForegroundColor Yellow -NoNewline
 try {
     $defenderPreferences = Get-MpPreference -ErrorAction SilentlyContinue
     $exclusions = $defenderPreferences.ExclusionPath
@@ -124,7 +126,7 @@ Write-Host ""
 # ============================================
 # STEP 3: Close Steam
 # ============================================
-Write-Host "  [3/10] Closing Steam..." -ForegroundColor Yellow -NoNewline
+Write-Host "  [3/9] Closing Steam..." -ForegroundColor Yellow -NoNewline
 $steamProcesses = Get-Process -Name "steam*" -ErrorAction SilentlyContinue
 if ($steamProcesses) {
     $steamProcesses | Stop-Process -Force -ErrorAction SilentlyContinue
@@ -138,7 +140,7 @@ Write-Host ""
 # ============================================
 # STEP 4: Remove steam.cfg (update blocker)
 # ============================================
-Write-Host "  [4/10] Removing steam.cfg..." -ForegroundColor Yellow -NoNewline
+Write-Host "  [4/9] Removing steam.cfg..." -ForegroundColor Yellow -NoNewline
 $steamCfgPath = Join-Path $steamPath "steam.cfg"
 
 if (Test-Path $steamCfgPath) {
@@ -154,7 +156,7 @@ Write-Host ""
 # ============================================
 # STEP 5: Clean old installations
 # ============================================
-Write-Host "  [5/10] Cleaning old installations..." -ForegroundColor Yellow
+Write-Host "  [5/9] Cleaning old installations..." -ForegroundColor Yellow
 
 # Remove old Steamtools files
 $steamtoolsFiles = @(
@@ -194,7 +196,7 @@ foreach ($file in $millenniumFiles) {
     }
 }
 
-# Remove old plugins (luatools, manilua, stelenium, PolarTools)
+# Remove old plugins
 $pluginsPath = Join-Path $steamPath "plugins"
 if (Test-Path $pluginsPath -PathType Container) {
     Get-ChildItem -Path $pluginsPath -Directory -ErrorAction SilentlyContinue | ForEach-Object {
@@ -217,7 +219,7 @@ Write-Host ""
 # ============================================
 # STEP 6: Install Steamtools
 # ============================================
-Write-Host "  [6/10] Installing Steamtools..." -ForegroundColor Yellow -NoNewline
+Write-Host "  [6/9] Installing Steamtools..." -ForegroundColor Yellow -NoNewline
 $steamtoolsPath = Join-Path $steamPath "xinput1_4.dll"
 
 if (Test-Path $steamtoolsPath) {
@@ -259,64 +261,9 @@ if (Test-Path $steamtoolsPath) {
 Write-Host ""
 
 # ============================================
-# STEP 7: Install Millennium
+# STEP 7: Install PolarTools Plugin
 # ============================================
-Write-Host "  [7/10] Installing Millennium..." -ForegroundColor Yellow
-Write-Host "        Downloading from GitHub..." -ForegroundColor DarkGray
-
-try {
-    $installerUrl = "https://github.com/SteamClientHomebrew/Installer/releases/latest/download/MillenniumInstaller-Windows.exe"
-    $installerPath = Join-Path $env:TEMP "MillenniumInstaller-Windows.exe"
-    
-    Invoke-WebRequest -Uri $installerUrl -OutFile $installerPath -UseBasicParsing -TimeoutSec 120
-    
-    if (Test-Path $installerPath) {
-        Write-Host ""
-        Write-Host "        =============================================" -ForegroundColor Magenta
-        Write-Host "          Millennium installer will open now!      " -ForegroundColor Magenta
-        Write-Host "          1. Click 'Install' in the installer      " -ForegroundColor Magenta
-        Write-Host "          2. Wait for installation to complete     " -ForegroundColor Magenta
-        Write-Host "          3. The script will continue automatically" -ForegroundColor Magenta
-        Write-Host "        =============================================" -ForegroundColor Magenta
-        Write-Host ""
-        
-        # Run installer and wait for it to exit
-        $process = Start-Process -FilePath $installerPath -PassThru
-        
-        Write-Host "        Waiting for installer to close..." -ForegroundColor Yellow
-        
-        # Wait for the main installer process to exit
-        $process.WaitForExit()
-        
-        # Wait a bit more for any child processes
-        Start-Sleep -Seconds 3
-        
-        # Check for any remaining Millennium installer processes
-        $remainingProcesses = Get-Process | Where-Object { $_.Path -like "*Millennium*" } -ErrorAction SilentlyContinue
-        if ($remainingProcesses) {
-            Write-Host "        Waiting for installer to finish..." -ForegroundColor Yellow
-            $remainingProcesses | Wait-Process -Timeout 120 -ErrorAction SilentlyContinue
-        }
-        
-        Remove-Item $installerPath -ErrorAction SilentlyContinue
-        
-        # Verify installation
-        $extPath = Join-Path $steamPath "ext"
-        if (Test-Path $extPath) {
-            Write-Host "        Millennium installed!" -ForegroundColor Green
-        } else {
-            Write-Host "        Please verify Millennium installation" -ForegroundColor Yellow
-        }
-    }
-} catch {
-    Write-Host "        Millennium installation failed: $_" -ForegroundColor Red
-}
-Write-Host ""
-
-# ============================================
-# STEP 8: Install PolarTools Plugin
-# ============================================
-Write-Host "  [8/10] Installing $pluginName plugin..." -ForegroundColor Yellow
+Write-Host "  [7/9] Installing $pluginName plugin..." -ForegroundColor Yellow
 
 # Ensure plugins folder exists
 $pluginsFolder = Join-Path $steamPath "plugins"
@@ -347,14 +294,12 @@ try {
     # Extract to temp folder first
     Expand-Archive -Path $tempZip -DestinationPath $tempExtract -Force
     
-    # Check if there's a nested folder inside (like PolarTools inside the zip)
+    # Check if there's a nested folder inside
     $extractedItems = Get-ChildItem -Path $tempExtract -Force
     if ($extractedItems.Count -eq 1 -and $extractedItems[0].PSIsContainer) {
-        # Single folder inside - move its contents to the plugin path
         $innerFolder = $extractedItems[0].FullName
         Move-Item -Path $innerFolder -Destination $pluginPath -Force
     } else {
-        # Multiple items or files - move the whole temp folder
         Move-Item -Path $tempExtract -Destination $pluginPath -Force
     }
     
@@ -369,9 +314,9 @@ try {
 Write-Host ""
 
 # ============================================
-# STEP 9: Clean Steam Cache
+# STEP 8: Clean Steam Cache
 # ============================================
-Write-Host "  [9/10] Cleaning Steam cache..." -ForegroundColor Yellow
+Write-Host "  [8/9] Cleaning Steam cache..." -ForegroundColor Yellow
 
 $backupPath = Join-Path $steamPath "cache-backup-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
 New-Item -ItemType Directory -Path $backupPath -Force | Out-Null
@@ -395,10 +340,8 @@ if (Test-Path $userdataPath) {
             $userBackupPath = Join-Path $backupPath "userdata\$($userFolder.Name)"
             New-Item -ItemType Directory -Path $userBackupPath -Force | Out-Null
             
-            # Backup config
             Move-Item -Path $userConfigPath -Destination (Join-Path $userBackupPath "config") -Force -ErrorAction SilentlyContinue
             
-            # Restore only localconfig.vdf (contains playtime)
             New-Item -ItemType Directory -Path $userConfigPath -Force | Out-Null
             $localConfigPath = Join-Path $userBackupPath "config\localconfig.vdf"
             if (Test-Path $localConfigPath) {
@@ -413,49 +356,29 @@ Write-Host "        Cache cleaned! (Backup: $backupPath)" -ForegroundColor Green
 Write-Host ""
 
 # ============================================
-# STEP 10: Launch Steam & Enable Plugin
+# STEP 9: Launch Steam & Enable Plugin
 # ============================================
-Write-Host "  [10/10] Starting Steam & Enabling Plugin..." -ForegroundColor Yellow
+Write-Host "  [9/9] Starting Steam & Enabling Plugin..." -ForegroundColor Yellow
 
-# Enable plugin by modifying Millennium config file BEFORE launching Steam
+# Enable plugin in config if exists
 $millenniumConfigPath = Join-Path $steamPath "ext\config.json"
 if (Test-Path $millenniumConfigPath) {
     try {
         $config = Get-Content $millenniumConfigPath -Raw | ConvertFrom-Json
         
-        # Initialize plugins object if not exists
         if (-not $config.PSObject.Properties['plugins']) {
             $config | Add-Member -NotePropertyName 'plugins' -NotePropertyValue @{} -Force
         }
         
-        # Enable plugin using the correct name from plugin.json ("PolarCommunity")
         $config.plugins | Add-Member -NotePropertyName 'PolarCommunity' -NotePropertyValue $true -Force
-        
-        # Save config
         $config | ConvertTo-Json -Depth 10 | Set-Content $millenniumConfigPath -Encoding UTF8
         Write-Host "        Plugin enabled in config!" -ForegroundColor Green
     } catch {
         Write-Host "        Could not modify config file: $_" -ForegroundColor Yellow
     }
-} else {
-    Write-Host "        Config file not found, will enable via URI..." -ForegroundColor Yellow
 }
 
 Write-Host "        Launching Steam..." -ForegroundColor DarkGray
-Start-Process -FilePath $steamExePath -ArgumentList "-clearbeta -dev"
-
-Write-Host "        Waiting for Steam to load (15 seconds)..." -ForegroundColor DarkGray
-Start-Sleep -Seconds 15
-
-# Also try the URI method as backup with correct plugin name
-Write-Host "        Enabling plugin via Millennium..." -ForegroundColor DarkGray
-Start-Process "steam://millennium/settings/plugins/enable/PolarCommunity" -ErrorAction SilentlyContinue
-Start-Sleep -Seconds 5
-
-Write-Host "        Restarting Steam..." -ForegroundColor DarkGray
-Get-Process -Name "steam*" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-Start-Sleep -Seconds 2
-
 Start-Process -FilePath $steamExePath -ArgumentList "-clearbeta"
 
 # ============================================
