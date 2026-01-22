@@ -219,55 +219,90 @@ Write-Host ""
 # STEP 6: Install SteamTools
 # ============================================
 Write-Host "  [6/10] Installing SteamTools..." -ForegroundColor Yellow
+Write-Host "        Downloading from steamtools.net..." -ForegroundColor DarkGray
 
-$steamToolsPath = Join-Path $env:USERPROFILE "Downloads\st-setup-1.8.30.exe"
-$steamToolsDownloaded = $false
-
-# Check if already downloaded
-if (Test-Path $steamToolsPath) {
-    $steamToolsDownloaded = $true
-    Write-Host "        Found in Downloads folder!" -ForegroundColor Green
-} else {
-    # Open browser to download (Cloudflare protected site)
-    Write-Host ""
-    Write-Host "        =============================================" -ForegroundColor Magenta
-    Write-Host "          Browser will open to download SteamTools " -ForegroundColor Magenta
-    Write-Host "          1. Wait for download to complete         " -ForegroundColor Magenta
-    Write-Host "          2. Press any key here when done          " -ForegroundColor Magenta
-    Write-Host "        =============================================" -ForegroundColor Magenta
-    Write-Host ""
+try {
+    $steamToolsPath = Join-Path $env:TEMP "st-setup.exe"
     
-    Start-Process "https://www.steamtools.net/res/st-setup-1.8.30.exe"
-    
-    Write-Host "        >>> Press any key AFTER download completes <<<" -ForegroundColor Cyan
-    $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
-    
-    # Check again after download
-    if (Test-Path $steamToolsPath) {
-        $steamToolsDownloaded = $true
+    # Use headers to bypass Cloudflare
+    $headers = @{
+        "User-Agent" = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        "Accept" = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+        "Accept-Language" = "en-US,en;q=0.5"
     }
-}
-
-if ($steamToolsDownloaded -and (Test-Path $steamToolsPath)) {
-    Write-Host ""
-    Write-Host "        =============================================" -ForegroundColor Magenta
-    Write-Host "          SteamTools installer will open now!     " -ForegroundColor Magenta
-    Write-Host "          1. Follow the installation steps        " -ForegroundColor Magenta
-    Write-Host "          2. Wait for installation to complete    " -ForegroundColor Magenta
-    Write-Host "          3. Close the installer window           " -ForegroundColor Magenta
-    Write-Host "        =============================================" -ForegroundColor Magenta
-    Write-Host ""
     
-    $process = Start-Process -FilePath $steamToolsPath -PassThru
+    Invoke-WebRequest -Uri $steamToolsLink -OutFile $steamToolsPath -UseBasicParsing -TimeoutSec 120 -Headers $headers
     
-    Write-Host "        Waiting for installer to close..." -ForegroundColor Yellow
+    if (Test-Path $steamToolsPath) {
+        # Check if file is valid (not HTML error page)
+        $fileSize = (Get-Item $steamToolsPath).Length
+        if ($fileSize -gt 100000) {
+            Write-Host ""
+            Write-Host "        =============================================" -ForegroundColor Magenta
+            Write-Host "          SteamTools installer will open now!     " -ForegroundColor Magenta
+            Write-Host "          1. Follow the installation steps        " -ForegroundColor Magenta
+            Write-Host "          2. Wait for installation to complete    " -ForegroundColor Magenta
+            Write-Host "          3. Close the installer window           " -ForegroundColor Magenta
+            Write-Host "        =============================================" -ForegroundColor Magenta
+            Write-Host ""
+            
+            $process = Start-Process -FilePath $steamToolsPath -PassThru
+            
+            Write-Host "        Waiting for installer to close..." -ForegroundColor Yellow
+            
+            $process.WaitForExit()
+            Start-Sleep -Seconds 2
+            
+            Remove-Item $steamToolsPath -ErrorAction SilentlyContinue
+            
+            Write-Host "        SteamTools installed!" -ForegroundColor Green
+        } else {
+            # File too small, probably Cloudflare block - fallback to browser
+            Remove-Item $steamToolsPath -ErrorAction SilentlyContinue
+            throw "Cloudflare protection detected"
+        }
+    }
+} catch {
+    Write-Host "        Direct download blocked. Opening browser..." -ForegroundColor Yellow
     
-    $process.WaitForExit()
-    Start-Sleep -Seconds 2
+    $steamToolsDownload = Join-Path $env:USERPROFILE "Downloads\st-setup-1.8.30.exe"
     
-    Write-Host "        SteamTools installed!" -ForegroundColor Green
-} else {
-    Write-Host "        SteamTools not found. Please install manually later." -ForegroundColor Yellow
+    if (-not (Test-Path $steamToolsDownload)) {
+        Write-Host ""
+        Write-Host "        =============================================" -ForegroundColor Magenta
+        Write-Host "          Browser will open to download SteamTools " -ForegroundColor Magenta
+        Write-Host "          1. Wait for download to complete         " -ForegroundColor Magenta
+        Write-Host "          2. Press any key here when done          " -ForegroundColor Magenta
+        Write-Host "        =============================================" -ForegroundColor Magenta
+        Write-Host ""
+        
+        Start-Process $steamToolsLink
+        
+        Write-Host "        >>> Press any key AFTER download completes <<<" -ForegroundColor Cyan
+        $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
+    }
+    
+    if (Test-Path $steamToolsDownload) {
+        Write-Host ""
+        Write-Host "        =============================================" -ForegroundColor Magenta
+        Write-Host "          SteamTools installer will open now!     " -ForegroundColor Magenta
+        Write-Host "          1. Follow the installation steps        " -ForegroundColor Magenta
+        Write-Host "          2. Wait for installation to complete    " -ForegroundColor Magenta
+        Write-Host "          3. Close the installer window           " -ForegroundColor Magenta
+        Write-Host "        =============================================" -ForegroundColor Magenta
+        Write-Host ""
+        
+        $process = Start-Process -FilePath $steamToolsDownload -PassThru
+        
+        Write-Host "        Waiting for installer to close..." -ForegroundColor Yellow
+        
+        $process.WaitForExit()
+        Start-Sleep -Seconds 2
+        
+        Write-Host "        SteamTools installed!" -ForegroundColor Green
+    } else {
+        Write-Host "        SteamTools not found. Please install manually later." -ForegroundColor Yellow
+    }
 }
 Write-Host ""
 
