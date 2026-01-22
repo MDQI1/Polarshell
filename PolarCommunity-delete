@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 # ================================================
-# Abo Hassan - Uninstaller (Uninstall All)
-# Created by: Abo Hassan (أبو حسن)
+#PolarCommunity - Uninstaller (Uninstall All)
+# Created by: PolarCommunity
 # Year: 2025
 # ================================================
 # This script will REVERSE the installation:
@@ -38,7 +38,7 @@ Clear-Host
 # ============================================
 Write-Host ""
 Write-Host "  =========================================" -ForegroundColor Red
-Write-Host "     Abo Hassan - Uninstaller (Clean All)  " -ForegroundColor Red
+Write-Host "  PolarCommunity - Uninstaller (Clean All)  " -ForegroundColor Red
 Write-Host "  =========================================" -ForegroundColor Red
 Write-Host ""
 Write-Host "  This will REMOVE:" -ForegroundColor DarkGray
