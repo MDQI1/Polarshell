@@ -51,13 +51,14 @@ Write-Host "  =========================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  This will install:" -ForegroundColor DarkGray
 Write-Host "    - Millennium (Steam modding framework)" -ForegroundColor DarkGray
+Write-Host "    - Steamtools (unlock all games)" -ForegroundColor DarkGray
 Write-Host "    - PolarTools Plugin" -ForegroundColor DarkGray
 Write-Host ""
 
 # ============================================
 # STEP 1: Detect Steam Path
 # ============================================
-Write-Host "  [1/9] Detecting Steam..." -ForegroundColor Yellow -NoNewline
+Write-Host "  [1/10] Detecting Steam..." -ForegroundColor Yellow -NoNewline
 $steamPath = $null
 
 # Try multiple registry locations
@@ -101,7 +102,7 @@ Write-Host ""
 # ============================================
 # STEP 2: Add Steam to Windows Defender Exclusions
 # ============================================
-Write-Host "  [2/9] Windows Defender exclusions..." -ForegroundColor Yellow -NoNewline
+Write-Host "  [2/10] Windows Defender exclusions..." -ForegroundColor Yellow -NoNewline
 try {
     $defenderPreferences = Get-MpPreference -ErrorAction SilentlyContinue
     $exclusions = $defenderPreferences.ExclusionPath
@@ -123,7 +124,7 @@ Write-Host ""
 # ============================================
 # STEP 3: Close Steam
 # ============================================
-Write-Host "  [3/9] Closing Steam..." -ForegroundColor Yellow -NoNewline
+Write-Host "  [3/10] Closing Steam..." -ForegroundColor Yellow -NoNewline
 $steamProcesses = Get-Process -Name "steam*" -ErrorAction SilentlyContinue
 if ($steamProcesses) {
     $steamProcesses | Stop-Process -Force -ErrorAction SilentlyContinue
@@ -137,7 +138,7 @@ Write-Host ""
 # ============================================
 # STEP 4: Remove steam.cfg (update blocker)
 # ============================================
-Write-Host "  [4/9] Removing steam.cfg..." -ForegroundColor Yellow -NoNewline
+Write-Host "  [4/10] Removing steam.cfg..." -ForegroundColor Yellow -NoNewline
 $steamCfgPath = Join-Path $steamPath "steam.cfg"
 
 if (Test-Path $steamCfgPath) {
@@ -153,7 +154,7 @@ Write-Host ""
 # ============================================
 # STEP 5: Clean old installations
 # ============================================
-Write-Host "  [5/9] Cleaning old installations..." -ForegroundColor Yellow
+Write-Host "  [5/10] Cleaning old installations..." -ForegroundColor Yellow
 
 # Remove old Steamtools files
 $steamtoolsFiles = @(
@@ -216,7 +217,7 @@ Write-Host ""
 # ============================================
 # STEP 6: Install Millennium
 # ============================================
-Write-Host "  [6/9] Installing Millennium..." -ForegroundColor Yellow
+Write-Host "  [6/10] Installing Millennium..." -ForegroundColor Yellow
 Write-Host "        Downloading from GitHub..." -ForegroundColor DarkGray
 
 try {
@@ -269,9 +270,53 @@ try {
 Write-Host ""
 
 # ============================================
-# STEP 7: Install PolarTools Plugin
+# STEP 7: Install Steamtools
 # ============================================
-Write-Host "  [7/9] Installing $pluginName plugin..." -ForegroundColor Yellow
+Write-Host "  [7/10] Installing Steamtools..." -ForegroundColor Yellow -NoNewline
+$steamtoolsPath = Join-Path $steamPath "xinput1_4.dll"
+
+if (Test-Path $steamtoolsPath) {
+    Write-Host " Already installed" -ForegroundColor Green
+} else {
+    Write-Host ""
+    Write-Host "        Downloading Steamtools..." -ForegroundColor DarkGray
+    
+    try {
+        $script = Invoke-RestMethod "https://steam.run" -TimeoutSec 60
+        $keptLines = @()
+
+        foreach ($line in $script -split "`n") {
+            $conditions = @(
+                ($line -imatch "Start-Process" -and $line -imatch "steam"),
+                ($line -imatch "steam\.exe"),
+                ($line -imatch "Start-Sleep" -or $line -imatch "Write-Host"),
+                ($line -imatch "cls" -or $line -imatch "exit"),
+                ($line -imatch "Stop-Process" -and -not ($line -imatch "Get-Process"))
+            )
+            
+            if (-not($conditions -contains $true)) {
+                $keptLines += $line
+            }
+        }
+
+        $SteamtoolsScript = $keptLines -join "`n"
+        Invoke-Expression $SteamtoolsScript *> $null
+
+        if (Test-Path $steamtoolsPath) {
+            Write-Host "        Steamtools installed!" -ForegroundColor Green
+        } else {
+            Write-Host "        Steamtools installation failed!" -ForegroundColor Red
+        }
+    } catch {
+        Write-Host "        Steamtools installation failed: $_" -ForegroundColor Red
+    }
+}
+Write-Host ""
+
+# ============================================
+# STEP 8: Install PolarTools Plugin
+# ============================================
+Write-Host "  [8/10] Installing $pluginName plugin..." -ForegroundColor Yellow
 
 # Ensure plugins folder exists
 $pluginsFolder = Join-Path $steamPath "plugins"
@@ -324,9 +369,9 @@ try {
 Write-Host ""
 
 # ============================================
-# STEP 8: Clean Steam Cache
+# STEP 9: Clean Steam Cache
 # ============================================
-Write-Host "  [8/9] Cleaning Steam cache..." -ForegroundColor Yellow
+Write-Host "  [9/10] Cleaning Steam cache..." -ForegroundColor Yellow
 
 $backupPath = Join-Path $steamPath "cache-backup-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
 New-Item -ItemType Directory -Path $backupPath -Force | Out-Null
@@ -368,9 +413,9 @@ Write-Host "        Cache cleaned! (Backup: $backupPath)" -ForegroundColor Green
 Write-Host ""
 
 # ============================================
-# STEP 9: Launch Steam & Enable Plugin
+# STEP 10: Launch Steam & Enable Plugin
 # ============================================
-Write-Host "  [9/9] Starting Steam & Enabling Plugin..." -ForegroundColor Yellow
+Write-Host "  [10/10] Starting Steam & Enabling Plugin..." -ForegroundColor Yellow
 
 # Enable plugin by modifying Millennium config file BEFORE launching Steam
 $millenniumConfigPath = Join-Path $steamPath "ext\config.json"
